@@ -1,0 +1,3 @@
+docker-compose.yml
+setup_db.sh
+bot/config.py

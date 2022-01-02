@@ -1,0 +1,19 @@
+version: '3.5'
+
+services:
+  db-REPLACE_WITH_DEPLOYMENT_NAME:
+    image: mariadb:10.7
+    ports:
+      - "3306"
+    volumes:
+      - ./db-data:/var/lib/mysql
+    restart: always
+
+  bot-REPLACE_WITH_DEPLOYMENT_NAME:
+    build: ./bot
+    environment:
+      SLACK_BOT_TOKEN: REPLACE_WITH_SLACK_BOT_TOKEN
+      MYSQL_USER: bot
+      MYSQL_PASSWORD: REPLACE_WITH_MYSQL_PASSWORD
+      MYSQL_DATABASE: bot
+      MYSQL_HOST: db-REPLACE_WITH_DEPLOYMENT_NAME
