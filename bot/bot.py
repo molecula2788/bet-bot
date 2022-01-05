@@ -294,7 +294,7 @@ class Bot(object):
                     self.logger.error(f'users_info failed: {ex}')
 
                 try:
-                    user_info[user_id]['avatar_url'] = info['user']['profile']['image_original']
+                    user_info[user_id]['avatar_url'] = info['user']['profile']['image_32']
                 except:
                     user_info[user_id]['avatar_url'] = '?'
 
