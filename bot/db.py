@@ -28,6 +28,10 @@ class DB(object):
         )
 
 
+    def ensure_connected(self):
+        self.conn.ping(reconnect=True, attempts=3)
+
+
     def config_get_channel(self):
         cursor = self.conn.cursor()
 
@@ -41,6 +45,7 @@ class DB(object):
 
 
     def bet_create(self, user_id, ts, resolve_date_ts, question, choices):
+        self.ensure_connected()
         cursor = self.conn.cursor(prepared=True)
 
         cursor.execute(('INSERT INTO bets (user, ts, resolve_date, active) '
@@ -65,6 +70,7 @@ class DB(object):
 
 
     def bet_info(self, bet_id):
+        self.ensure_connected()
         cursor = self.conn.cursor(prepared=True)
 
         cursor.execute(
@@ -99,6 +105,7 @@ class DB(object):
 
 
     def bet_get_votes(self, bet_id):
+        self.ensure_connected()
         cursor = self.conn.cursor(prepared=True)
 
         cursor.execute(('SELECT v.user, v.choice_id, v.ts FROM bets b '
@@ -122,6 +129,7 @@ class DB(object):
 
 
     def bet_do_vote(self, bet_id, user_id, choice_id):
+        self.ensure_connected()
         cursor = self.conn.cursor(prepared=True)
 
         ts = int(time.time())
@@ -139,6 +147,7 @@ class DB(object):
 
 
     def bet_resolve(self, bet_id, choice_id):
+        self.ensure_connected()
         cursor = self.conn.cursor(prepared=True)
 
         ts = int(time.time())
@@ -153,6 +162,7 @@ class DB(object):
 
 
     def get_bets(self):
+        self.ensure_connected()
         cursor = self.conn.cursor(prepared=True)
 
         cursor.execute(('SELECT b.id, b.resolve_date, q.question, b.active, c.choice '
@@ -171,6 +181,7 @@ class DB(object):
 
 
     def get_bets_for_user(self, user):
+        self.ensure_connected()
         cursor = self.conn.cursor(prepared=True)
 
         inner_query = ('SELECT b.*, c.choice AS correct_choice FROM bets b '
@@ -194,6 +205,7 @@ class DB(object):
 
 
     def get_winners(self, bet_id):
+        self.ensure_connected()
         cursor = self.conn.cursor(prepared=True)
 
         cursor.execute(('SELECT v.user, v.ts, b.resolve_date FROM bet_votes v '
