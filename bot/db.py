@@ -48,6 +48,18 @@ class DB(object):
         return result[0][0]
 
 
+    def config_get_admin_user_id(self):
+        cursor = self.conn.cursor()
+
+        cursor.execute("SELECT value FROM bot_config WHERE name = 'admin_user_id'")
+
+        result = list(cursor.fetchall())
+
+        assert(len(result) == 1)
+
+        return result[0][0]
+
+
     def bet_create(self, user_id, ts, resolve_date_ts, question, choices):
         self.ensure_connected()
         cursor = self.conn.cursor(prepared=True)

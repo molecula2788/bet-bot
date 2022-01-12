@@ -46,6 +46,7 @@ done
 docker exec -i mysql-tmp mysql -u bot -p$MYSQL_BOT_PASSWORD bot < db.sql
 
 docker exec -i mysql-tmp mysql -u bot -p$MYSQL_BOT_PASSWORD bot -e "INSERT INTO bot_config(name, value) values('channel_id','REPLACE_WITH_CHANNEL_ID')"
+docker exec -i mysql-tmp mysql -u bot -p$MYSQL_BOT_PASSWORD bot -e "INSERT INTO bot_config(name, value) values('admin_user_id','REPLACE_WITH_ADMIN_USER_ID')"
 
 kill -QUIT $pid
 wait $pid

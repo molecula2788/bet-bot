@@ -24,6 +24,7 @@ class Bot(object):
         self._rtm_on('member_joined_channel')(self.on_joined_channel)
 
         self.my_channel = self.db.config_get_channel()
+        self.admin_user_id = self.db.config_get_admin_user_id()
         self.my_user_id = self.rtm.web_client.auth_test()['user_id']
 
         self.task_mgr = TaskManager()
@@ -444,7 +445,7 @@ class Bot(object):
             self.do_reply(client, event, usage_bet_resolve_blocks, usage_bet_resolve_text)
             return
 
-        if event['user'] != 'UA7L5NH3R':
+        if event['user'] != self.admin_user_id:
             return
 
         bet_id = args[0]
