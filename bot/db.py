@@ -169,9 +169,9 @@ class DB(object):
         ts = int(time.time())
 
         cursor.execute(('UPDATE bets '
-                        'SET active = 0, correct_choice_id = %s '
+                        'SET active = 0, correct_choice_id = %s, resolve_date = %s '
                         'WHERE id = %s'),
-                       (choice_id, bet_id))
+                       (choice_id, ts, bet_id))
 
         self.conn.commit()
         cursor.close()
