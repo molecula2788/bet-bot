@@ -189,7 +189,7 @@ class Bot(object):
         ALIGN_DATE = 25
         ALIGN_QUESTION = 50
 
-        results = db.get_bets()
+        results = self.db.get_bets()
         text = 'Ongoing\n\n'
         text += '{} {} {}\n'.format(
             'Id'.ljust(ALIGN_ID),
@@ -239,7 +239,7 @@ class Bot(object):
         ALIGN_QUESTION = 50
         ALIGN_ANSWER = 50
 
-        results = db.get_bets_for_user(event['user'])
+        results = self.db.get_bets_for_user(event['user'])
 
         text = 'Ongoing\n\n'
         text += '{} {} {} {}\n'.format(
