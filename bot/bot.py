@@ -113,7 +113,7 @@ class Bot(object):
                 text = message_text
             )
         except Exception as ex:
-            self.logger.error(f'chat_postEphemeral failed: {ex}')
+            self.logger.error(f'chat_postMessage failed: {ex}')
 
 
     def do_reply_on_channel(self, client: RTMClient, event: dict,
