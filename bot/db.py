@@ -32,6 +32,10 @@ class DB(object):
         self.conn.ping(reconnect=True, attempts=3)
 
 
+    def close(self):
+        self.conn.close()
+
+
     def config_get_channel(self):
         cursor = self.conn.cursor()
 
@@ -220,3 +224,47 @@ class DB(object):
         cursor.close()
 
         return results
+
+
+    def get_all_user_ids(self):
+        self.ensure_connected()
+        cursor = self.conn.cursor()
+
+        cursor.execute('SELECT DISTINCT user FROM bet_votes')
+        user_ids = list(cursor.fetchall())
+
+        self.conn.commit()
+        cursor.close()
+
+        return [x[0] for x in user_ids]
+
+
+    def get_user_info(self, user_id):
+        self.ensure_connected()
+        cursor = self.conn.cursor(prepared=True)
+
+        cursor.execute(('SELECT name, avatar_url FROM users '
+                        'WHERE id = %s'),
+                       (user_id,))
+        results = list(cursor.fetchall())
+
+        self.conn.commit()
+        cursor.close()
+
+        if len(results) == 0:
+            return None
+        else:
+            return results[0]
+
+
+    def update_user_info(self, user_id, name, avatar_url):
+        self.ensure_connected()
+        cursor = self.conn.cursor(prepared=True)
+
+        cursor.execute(('INSERT INTO users '
+                        'VALUES (%s, %s, %s) '
+                        'ON DUPLICATE KEY UPDATE name = %s, avatar_url = %s'),
+                       (user_id, name, avatar_url, name, avatar_url))
+
+        self.conn.commit()
+        cursor.close()

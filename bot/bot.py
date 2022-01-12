@@ -11,12 +11,13 @@ from slack_sdk.rtm_v2 import RTMClient
 
 from db import DB
 from strings import *
+from tasks import TaskManager
 
 MENTION_REGEX = '^<@([WU].+)>(.*)'
 
 class Bot(object):
-    def __init__(self, db: DB):
-        self.db = db
+    def __init__(self):
+        self.db = DB()
         self.rtm = RTMClient(token=os.environ['SLACK_BOT_TOKEN'])
 
         self._rtm_on('message')(self.on_message)
@@ -24,6 +25,8 @@ class Bot(object):
 
         self.my_channel = self.db.config_get_channel()
         self.my_user_id = self.rtm.web_client.auth_test()['user_id']
+
+        self.task_mgr = TaskManager()
 
         self.logger = logging.getLogger('bot')
 
@@ -36,13 +39,42 @@ class Bot(object):
         return tmp
 
 
+    def get_user_info(self, user_id: str):
+        res = self.db.get_user_info(user_id)
+
+        if not res:
+            try:
+                info = self.rtm.web_client.users_info(user = user_id)
+            except Exception as ex:
+                self.logger.error(f'users_info failed: {ex}')
+
+            try:
+                avatar_url = info['user']['profile']['image_32']
+            except:
+                avatar_url = '?'
+
+            try:
+                name = info['user']['profile']['display_name']
+                if name == '':
+                    name = info['user']['profile']['real_name']
+            except:
+                name = '?'
+
+            self.db.update_user_info(user_id, name, avatar_url)
+        else:
+            name, avatar_url = res
+
+        return name, avatar_url
+
+
     def parse_direct_mention(self, message_text: str):
         matches = re.search(MENTION_REGEX, message_text)
         # the first group contains the username, the second group contains the remaining message
         return (matches.group(1), matches.group(2).strip()) if matches else (None, None)
 
 
-    def do_reply_ephemeral(self, client, event, message_blocks, message_text):
+    def do_reply_ephemeral(self, client: RTMClient, event: dict,
+                           message_blocks: dict, message_text: str):
         channel = event.get('channel', None)
         user_id = event.get('user', None)
         thread_ts = event.get('thread_ts', None)
@@ -62,7 +94,8 @@ class Bot(object):
             self.logger.error(f'chat_postEphemeral failed: {ex}')
 
 
-    def do_reply(self, client, event, message_blocks, message_text):
+    def do_reply(self, client: RTMClient, event: dict,
+                 message_blocks: dict, message_text: str):
         channel = event.get('channel', None)
         user_id = event.get('user', None)
         thread_ts = event.get('thread_ts', None)
@@ -82,7 +115,8 @@ class Bot(object):
             self.logger.error(f'chat_postEphemeral failed: {ex}')
 
 
-    def do_reply_on_channel(self, client, event, channel, message_blocks, message_text):
+    def do_reply_on_channel(self, client: RTMClient, event: dict,
+                            channel: str, message_blocks: dict, message_text: str):
         try:
             client.web_client.chat_postMessage(
                 channel = channel,
@@ -93,7 +127,8 @@ class Bot(object):
             self.logger.error(f'chat_postMessage failed: {ex}')
 
 
-    def do_reply_big_msg(self, client, event, title, comment, text):
+    def do_reply_big_msg(self, client: RTMClient, event: dict,
+                         title: str, comment: str, text: str):
         try:
             res = client.web_client.conversations_open(users = event['user'])
         except Exception as ex:
@@ -122,7 +157,7 @@ class Bot(object):
     bets
     '''
     def bets(self, client: RTMClient, event: dict, args: List[str]):
-        results = db.get_bets()
+        results = self.db.get_bets()
         ALIGN = 10
         MAX_TEXT = 3700
 
@@ -286,24 +321,9 @@ class Bot(object):
 
         for choice_id in votes:
             for user_id, _ in votes[choice_id]:
-                user_info[user_id] = {}
+                name, avatar_url = self.get_user_info(user_id)
 
-                try:
-                    info = client.web_client.users_info(user = user_id)
-                except Exception as ex:
-                    self.logger.error(f'users_info failed: {ex}')
-
-                try:
-                    user_info[user_id]['avatar_url'] = info['user']['profile']['image_32']
-                except:
-                    user_info[user_id]['avatar_url'] = '?'
-
-                try:
-                    user_info[user_id]['name'] = info['user']['profile']['display_name']
-                    if user_info[user_id]['name'] == '':
-                        user_info[user_id]['name'] = info['user']['profile']['real_name']
-                except:
-                    user_info[user_id]['name'] = '?'
+                user_info[user_id] = { 'name': name, 'avatar_url': avatar_url }
 
         self.do_reply(client, event,
                       bet_info_blocks(bet_id, question, choices, correct_choice_id,
@@ -533,7 +553,6 @@ class Bot(object):
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     time.sleep(2)
-    db = DB()
 
-    bot = Bot(db)
+    bot = Bot()
     bot.start()
