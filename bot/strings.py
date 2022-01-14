@@ -263,14 +263,14 @@ def vote_registered_blocks(question, choice):
 	    'type': 'section',
 	    'text': {
 	        'type': 'mrkdwn',
-	        'text': f'Question: {question}'
+	        'text': f'*Question*: {question}'
 	    }
         },
         {
 	    'type': 'section',
 	    'text': {
 	        'type': 'mrkdwn',
-	        'text': f'Your choice: {choice}'
+	        'text': f'*Your choice*: {choice}'
 	    }
         }
     ]
