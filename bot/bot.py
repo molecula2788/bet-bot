@@ -387,7 +387,7 @@ class Bot(object):
             return
 
         self.do_reply(client, event,
-                      vote_registered_blocks(question, choices[choice_idx][1]),
+                      vote_registered_blocks(question.split('\n')[0], choices[choice_idx][1]),
                       vote_registered_text)
 
 
