@@ -18,6 +18,10 @@ MENTION_REGEX = '^<@([WU].+)>(.*)'
 MAX_QUESTION_LEN = 255
 MAX_ANSWER_LEN = 255
 
+def ts_to_str(ts):
+    return datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+
+
 class Bot(object):
     def __init__(self):
         self.db = DB()
@@ -162,19 +166,31 @@ class Bot(object):
     '''
     def bets(self, client: RTMClient, event: dict, args: List[str]):
         results = self.db.get_bets()
-        ALIGN = 10
+        ALIGN_ID = 5
+        ALIGN_DATE = 22
         MAX_TEXT = 2900
 
         truncated = False
 
-        text = '{} {}\n'.format('Id'.ljust(ALIGN), 'Question')
+        text = '{} {} {}\n'.format(
+            'Id'.ljust(ALIGN_ID),
+            'Voting ends on'.ljust(ALIGN_DATE+7),
+            'Question')
         text += '-' * 50 + '\n'
 
-        for bet_id, _, question, active, _ in results:
+        now = time.time()
+
+        for bet_id, resolve_date_ts, voting_end_date_ts, question, active, _ in results:
             if not active:
                 continue
 
-            line = '{} {}\n'.format('{}'.format(bet_id).ljust(ALIGN), question.split('\n')[0])
+            if now > voting_end_date_ts:
+                continue
+
+            line = '{} {} {}\n'.format(
+                str(bet_id).ljust(ALIGN_ID),
+                ts_to_str(voting_end_date_ts).ljust(ALIGN_DATE),
+                question.split('\n')[0])
 
             if len(text) + len(line) > MAX_TEXT:
                 truncated = True
@@ -197,34 +213,58 @@ class Bot(object):
 
         results = self.db.get_bets()
         text = 'Ongoing\n\n'
-        text += '{} {} {}\n'.format(
-            'Id'.ljust(ALIGN_ID),
-            'Resolve date'.ljust(ALIGN_DATE),
-            'Question')
-        text += '-' * 50 + '\n'
-
-        for bet_id, resolve_date_ts, question, active, _ in results:
-            if active:
-                question = question.split('\n')[0]
-                text += '{} {} {}\n'.format(
-                    '{}'.format(bet_id).ljust(ALIGN_ID),
-                    datetime.fromtimestamp(resolve_date_ts).strftime('%Y-%m-%d %H:%M:%S').ljust(ALIGN_DATE),
-                    question[:ALIGN_QUESTION])
-
-        text += '\nPast bets\n\n'
         text += '{} {} {} {}\n'.format(
             'Id'.ljust(ALIGN_ID),
             'Resolve date'.ljust(ALIGN_DATE),
-            'Question'.ljust(ALIGN_QUESTION),
-            'Correct choice')
-        text += '-' * 110 + '\n'
+            'Voting ends on'.ljust(ALIGN_DATE),
+            'Question')
+        text += '-' * 75 + '\n'
 
-        for bet_id, resolve_date_ts, question, active, correct_choice in results:
-            if not active:
+        now = int(time.time())
+
+        for bet_id, resolve_date_ts, voting_end_date_ts, question, active, _ in results:
+            if active and now <= voting_end_date_ts:
                 question = question.split('\n')[0]
                 text += '{} {} {} {}\n'.format(
                     '{}'.format(bet_id).ljust(ALIGN_ID),
-                    datetime.fromtimestamp(resolve_date_ts).strftime('%Y-%m-%d %H:%M:%S').ljust(ALIGN_DATE),
+                    ts_to_str(resolve_date_ts).ljust(ALIGN_DATE),
+                    ts_to_str(voting_end_date_ts).ljust(ALIGN_DATE),
+                    question[:ALIGN_QUESTION])
+
+        text += '\nVoting ended\n\n'
+        text += '{} {} {} {}\n'.format(
+            'Id'.ljust(ALIGN_ID),
+            'Resolve date'.ljust(ALIGN_DATE),
+            'Voting ended on'.ljust(ALIGN_DATE),
+            'Question')
+        text += '-' * 75 + '\n'
+
+        for bet_id, resolve_date_ts, voting_end_date_ts, question, active, _ in results:
+            if active and now > voting_end_date_ts:
+                question = question.split('\n')[0]
+                text += '{} {} {} {}\n'.format(
+                    '{}'.format(bet_id).ljust(ALIGN_ID),
+                    ts_to_str(resolve_date_ts).ljust(ALIGN_DATE),
+                    ts_to_str(voting_end_date_ts).ljust(ALIGN_DATE),
+                    question[:ALIGN_QUESTION])
+
+
+        text += '\nPast bets\n\n'
+        text += '{} {} {} {} {}\n'.format(
+            'Id'.ljust(ALIGN_ID),
+            'Resolve date'.ljust(ALIGN_DATE),
+            'Voting ended on'.ljust(ALIGN_DATE),
+            'Question'.ljust(ALIGN_QUESTION),
+            'Correct choice')
+        text += '-' * 135 + '\n'
+
+        for bet_id, resolve_date_ts, voting_end_date_ts, question, active, correct_choice in results:
+            if not active:
+                question = question.split('\n')[0]
+                text += '{} {} {} {} {}\n'.format(
+                    '{}'.format(bet_id).ljust(ALIGN_ID),
+                    ts_to_str(resolve_date_ts).ljust(ALIGN_DATE),
+                    ts_to_str(voting_end_date_ts).ljust(ALIGN_DATE),
                     question[:ALIGN_QUESTION].ljust(ALIGN_QUESTION),
                     correct_choice[:ALIGN_ANSWER])
 
@@ -249,38 +289,64 @@ class Bot(object):
         results = self.db.get_bets_for_user(event['user'])
 
         text = 'Ongoing\n\n'
+        text += '{} {} {} {} {}\n'.format(
+            'Id'.ljust(ALIGN_ID),
+            'Resolve date'.ljust(ALIGN_DATE),
+            'Voting ends on'.ljust(ALIGN_DATE),
+            'Question'.ljust(ALIGN_QUESTION),
+            'Your choice')
+        text += '-' * 155 + '\n'
+
+        now = int(time.time())
+
+        for bet_id, resolve_date_ts, voting_end_date_ts, active, question, correct_choice, choice in results:
+            if active and now <= voting_end_date_ts:
+                question = question.split('\n')[0]
+
+                text += '{} {} {} {} {}\n'.format(
+                    '{}'.format(bet_id).ljust(ALIGN_ID),
+                    ts_to_str(resolve_date_ts).ljust(ALIGN_DATE),
+                    ts_to_str(voting_end_date_ts).ljust(ALIGN_DATE),
+                    question[:ALIGN_QUESTION].ljust(ALIGN_QUESTION),
+                    choice[:ALIGN_ANSWER])
+
+        text += '\nVoting ended\n\n'
         text += '{} {} {} {}\n'.format(
             'Id'.ljust(ALIGN_ID),
             'Resolve date'.ljust(ALIGN_DATE),
+            'Voting ended on'.ljust(ALIGN_DATE),
             'Question'.ljust(ALIGN_QUESTION),
             'Your choice')
-        text += '-' * 130 + '\n'
+        text += '-' * 155 + '\n'
 
-        for bet_id, resolve_date_ts, active, question, correct_choice, choice in results:
-            if active:
+        for bet_id, resolve_date_ts, voting_end_date_ts, active, question, correct_choice, choice in results:
+            if active and now > voting_end_date_ts:
                 question = question.split('\n')[0]
 
-                text += '{} {} {} {}\n'.format(
+                text += '{} {} {} {} {}\n'.format(
                     '{}'.format(bet_id).ljust(ALIGN_ID),
-                    datetime.fromtimestamp(resolve_date_ts).strftime('%Y-%m-%d %H:%M:%S').ljust(ALIGN_DATE),
+                    ts_to_str(resolve_date_ts).ljust(ALIGN_DATE),
+                    ts_to_str(voting_end_date_ts).ljust(ALIGN_DATE),
                     question[:ALIGN_QUESTION].ljust(ALIGN_QUESTION),
                     choice[:ALIGN_ANSWER])
 
         text += '\nPast bets\n\n'
-        text += '{} {} {} {} {}\n'.format(
+        text += '{} {} {} {} {} {}\n'.format(
             'Id'.ljust(ALIGN_ID),
             'Resolve date'.ljust(ALIGN_DATE),
+            'Voting ended on'.ljust(ALIGN_DATE),
             'Question'.ljust(ALIGN_QUESTION),
             'Your choice'.ljust(ALIGN_ANSWER),
             'Correct choice')
-        text += '-' * 160 + '\n'
+        text += '-' * 185 + '\n'
 
-        for bet_id, resolve_date_ts, active, question, correct_choice, choice in results:
+        for bet_id, resolve_date_ts, voting_end_date_ts, active, question, correct_choice, choice in results:
             if not active:
                 question = question.split('\n')[0]
-                text += '{} {} {} {} {}\n'.format(
+                text += '{} {} {} {} {} {}\n'.format(
                     '{}'.format(bet_id).ljust(ALIGN_ID),
-                    datetime.fromtimestamp(resolve_date_ts).strftime('%Y-%m-%d %H:%M:%S').ljust(ALIGN_DATE),
+                    ts_to_str(resolve_date_ts).ljust(ALIGN_DATE),
+                    ts_to_str(voting_end_date_ts).ljust(ALIGN_DATE),
                     question[:ALIGN_QUESTION].ljust(ALIGN_QUESTION),
                     choice[:ALIGN_ANSWER].ljust(ALIGN_ANSWER),
                     correct_choice[:ALIGN_CORRECT_ANSWER])
@@ -488,7 +554,7 @@ class Bot(object):
                           bet_not_found_text)
             return
 
-        active, bet_owner, _, _, _, question = info
+        active, bet_owner, _, voting_end_date_ts, _, question = info
 
         if event['user'] != self.admin_user_id and event['user'] != bet_owner:
             return
@@ -497,6 +563,12 @@ class Bot(object):
             self.do_reply(client, event,
                           None,
                           bet_not_active_text)
+            return
+
+        if int(time.time()) < voting_end_date_ts:
+            self.do_reply(client, event,
+                          None,
+                          bet_vote_not_ended)
             return
 
         try:

@@ -325,6 +325,8 @@ bet_not_active_text = 'Bet not active'
 
 bet_vote_has_ended = 'Voting has ended for this bet'
 
+bet_vote_not_ended = 'Voting is still ongoing for this bet'
+
 usage_bet_resolve_blocks = [
     {
 	'type': 'section',

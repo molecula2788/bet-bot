@@ -169,9 +169,9 @@ class DB(object):
         ts = int(time.time())
 
         cursor.execute(('UPDATE bets '
-                        'SET active = 0, correct_choice_id = %s, resolve_date = %s, voting_end_date = %s '
+                        'SET active = 0, correct_choice_id = %s, resolve_date = %s '
                         'WHERE id = %s'),
-                       (choice_id, ts, ts-1, bet_id))
+                       (choice_id, ts, bet_id))
 
         self.conn.commit()
         cursor.close()
@@ -181,7 +181,7 @@ class DB(object):
         self.ensure_connected()
         cursor = self.conn.cursor(prepared=True)
 
-        cursor.execute(('SELECT b.id, b.resolve_date, q.question, b.active, c.choice '
+        cursor.execute(('SELECT b.id, b.resolve_date, b.voting_end_date, q.question, b.active, c.choice '
                         'FROM bets b '
                         'INNER JOIN bet_questions q ON b.id = q.bet_id '
                         'LEFT JOIN bet_choices c '
@@ -204,7 +204,7 @@ class DB(object):
                        'LEFT JOIN bet_choices c '
                        'ON c.id = b.correct_choice_id AND c.bet_id = b.id')
 
-        cursor.execute(('SELECT b.id, b.resolve_date, b.active, q.question, b.correct_choice, c.choice '
+        cursor.execute(('SELECT b.id, b.resolve_date, b.voting_end_date, b.active, q.question, b.correct_choice, c.choice '
                         'FROM bet_votes v '
                         'INNER JOIN ({}) b ON b.id = v.bet_id '
                         'INNER JOIN bet_questions q ON q.bet_id = v.bet_id '
