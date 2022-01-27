@@ -17,3 +17,5 @@ services:
       MYSQL_PASSWORD: REPLACE_WITH_MYSQL_PASSWORD
       MYSQL_DATABASE: bot
       MYSQL_HOST: db-REPLACE_WITH_DEPLOYMENT_NAME
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
