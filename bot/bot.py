@@ -417,9 +417,6 @@ class Bot(object):
             self.do_reply(client, event, usage_bet_create_blocks, usage_bet_create_text)
             return
 
-#        if event['user'] != 'UA7L5NH3R':
-#            return
-
         resolve_date = args[0]
         end_vote_date = args[1]
         question = args[2]
@@ -476,9 +473,6 @@ class Bot(object):
             self.do_reply(client, event, usage_bet_resolve_blocks, usage_bet_resolve_text)
             return
 
-        if event['user'] != self.admin_user_id:
-            return
-
         bet_id = args[0]
         choice = args[1]
 
@@ -494,11 +488,14 @@ class Bot(object):
                           bet_not_found_text)
             return
 
-        active, _, _, _, _, question = info
+        active, bet_owner, _, _, _, question = info
+
+        if event['user'] != self.admin_user_id and event['user'] != bet_owner:
+            return
 
         if not active:
             self.do_reply(client, event,
-                          "",
+                          None,
                           bet_not_active_text)
             return
 
@@ -516,7 +513,7 @@ class Bot(object):
         try:
             result = self.db.bet_resolve(bet_id, choices[choice_idx][0])
         except Exception as ex:
-            self.logger.error(f'bet_do_vote failed: {ex}')
+            self.logger.error(f'bet_resolve failed: {ex}')
             return
 
         try:
