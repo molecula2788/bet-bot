@@ -15,6 +15,9 @@ from tasks import TaskManager
 
 MENTION_REGEX = '^<@([WU].+)>(.*)'
 
+MAX_QUESTION_LEN = 255
+MAX_ANSWER_LEN = 255
+
 class Bot(object):
     def __init__(self):
         self.db = DB()
@@ -160,7 +163,7 @@ class Bot(object):
     def bets(self, client: RTMClient, event: dict, args: List[str]):
         results = self.db.get_bets()
         ALIGN = 10
-        MAX_TEXT = 3700
+        MAX_TEXT = 2900
 
         truncated = False
 
@@ -171,11 +174,13 @@ class Bot(object):
             if not active:
                 continue
 
-            text += '{} {}\n'.format('{}'.format(bet_id).ljust(ALIGN), question.split('\n')[0])
+            line = '{} {}\n'.format('{}'.format(bet_id).ljust(ALIGN), question.split('\n')[0])
 
-            if len(text) > 3800:
+            if len(text) + len(line) > MAX_TEXT:
                 truncated = True
                 break
+
+            text += line
 
         self.do_reply(client, event,
                       bets_blocks(text, truncated),
@@ -188,6 +193,7 @@ class Bot(object):
         ALIGN_ID = 10
         ALIGN_DATE = 25
         ALIGN_QUESTION = 50
+        ALIGN_ANSWER = 50
 
         results = self.db.get_bets()
         text = 'Ongoing\n\n'
@@ -203,7 +209,7 @@ class Bot(object):
                 text += '{} {} {}\n'.format(
                     '{}'.format(bet_id).ljust(ALIGN_ID),
                     datetime.fromtimestamp(resolve_date_ts).strftime('%Y-%m-%d %H:%M:%S').ljust(ALIGN_DATE),
-                    question)
+                    question[:ALIGN_QUESTION])
 
         text += '\nPast bets\n\n'
         text += '{} {} {} {}\n'.format(
@@ -220,7 +226,7 @@ class Bot(object):
                     '{}'.format(bet_id).ljust(ALIGN_ID),
                     datetime.fromtimestamp(resolve_date_ts).strftime('%Y-%m-%d %H:%M:%S').ljust(ALIGN_DATE),
                     question[:ALIGN_QUESTION].ljust(ALIGN_QUESTION),
-                    correct_choice)
+                    correct_choice[:ALIGN_ANSWER])
 
         text = text[:-1]
 
@@ -238,6 +244,7 @@ class Bot(object):
         ALIGN_DATE = 25
         ALIGN_QUESTION = 50
         ALIGN_ANSWER = 50
+        ALIGN_CORRECT_ANSWER = 50
 
         results = self.db.get_bets_for_user(event['user'])
 
@@ -257,7 +264,7 @@ class Bot(object):
                     '{}'.format(bet_id).ljust(ALIGN_ID),
                     datetime.fromtimestamp(resolve_date_ts).strftime('%Y-%m-%d %H:%M:%S').ljust(ALIGN_DATE),
                     question[:ALIGN_QUESTION].ljust(ALIGN_QUESTION),
-                    choice)
+                    choice[:ALIGN_ANSWER])
 
         text += '\nPast bets\n\n'
         text += '{} {} {} {} {}\n'.format(
@@ -276,7 +283,7 @@ class Bot(object):
                     datetime.fromtimestamp(resolve_date_ts).strftime('%Y-%m-%d %H:%M:%S').ljust(ALIGN_DATE),
                     question[:ALIGN_QUESTION].ljust(ALIGN_QUESTION),
                     choice[:ALIGN_ANSWER].ljust(ALIGN_ANSWER),
-                    correct_choice)
+                    correct_choice[:ALIGN_CORRECT_ANSWER])
 
         text = text[:-1]
 
@@ -419,6 +426,9 @@ class Bot(object):
         choices = args[3:]
 
         question = question.replace('\\n', '\n')
+
+        question = question[:MAX_QUESTION_LEN]
+        choices = [c[:MAX_ANSWER_LEN] for c in choices]
 
         try:
             resolve_date_ts = int(datetime.fromisoformat(resolve_date).timestamp())

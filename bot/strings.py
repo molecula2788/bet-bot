@@ -286,7 +286,7 @@ def vote_registered_blocks(question, choice):
 vote_registered_text = 'Vote registered'
 
 def bets_blocks(text, truncated):
-    return [
+    b = [
         {
             'type': 'section',
             'text': {
@@ -300,15 +300,26 @@ def bets_blocks(text, truncated):
                 'type': 'plain_text',
 		'text': text
             }
-        },
-        {
+        }
+    ]
+
+    if truncated:
+        b.append({
+            'type': 'section',
+            'text': {
+                'type': 'mrkdwn',
+                'text': f'Output has been truncated. Use `@{config.my_name} bets-all` to see all bets'
+            }
+        })
+    b.append({
             'type': 'section',
             'text': {
                 'type': 'mrkdwn',
                 'text': f'Use `@{config.my_name} bet-info id` for more details'
             }
         }
-    ]
+    )
+    return b
 
 bet_not_active_text = 'Bet not active'
 
