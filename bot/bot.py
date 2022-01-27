@@ -310,7 +310,7 @@ class Bot(object):
                           bet_not_found_text)
             return
 
-        active, _, resolve_date, correct_choice_id, question = info
+        active, _, resolve_date_ts, voting_end_date_ts, correct_choice_id, question = info
 
         try:
             votes = self.db.bet_get_votes(bet_id)
@@ -328,7 +328,7 @@ class Bot(object):
 
         self.do_reply(client, event,
                       bet_info_blocks(bet_id, question, choices, correct_choice_id,
-                                      resolve_date, votes, user_info),
+                                      resolve_date_ts, voting_end_date_ts, votes, user_info),
                       bet_info_text)
 
 
@@ -361,12 +361,19 @@ class Bot(object):
                           bet_not_found_text)
             return
 
-        active, _, resolve_date, correct_choice_id, question = info
+        active, _, _, voting_end_date_ts, correct_choice_id, question = info
 
         if not active:
             self.do_reply(client, event,
                           None,
                           bet_not_active_text)
+            return
+
+        vote_ts = int(time.time())
+        if vote_ts > voting_end_date_ts:
+            self.do_reply(client, event,
+                          None,
+                          bet_vote_has_ended)
             return
 
         try:
@@ -381,7 +388,7 @@ class Bot(object):
             return
 
         try:
-            result = self.db.bet_do_vote(bet_id, event['user'], choices[choice_idx][0])
+            result = self.db.bet_do_vote(bet_id, event['user'], vote_ts, choices[choice_idx][0])
         except Exception as ex:
             self.logger.error(f'bet_do_vote failed: {ex}')
             return
@@ -392,10 +399,10 @@ class Bot(object):
 
 
     '''
-    bet_create resolve_date question choice1 choice2 ...
+    bet_create resolve_date end_vote_date question choice1 choice2 ...
     '''
     def bet_create(self, client: RTMClient, event: dict, args: List[str]):
-        if len(args) < 3:
+        if len(args) < 4:
             self.do_reply(client, event, usage_bet_create_blocks, usage_bet_create_text)
             return
 
@@ -407,8 +414,9 @@ class Bot(object):
 #            return
 
         resolve_date = args[0]
-        question = args[1]
-        choices = args[2:]
+        end_vote_date = args[1]
+        question = args[2]
+        choices = args[3:]
 
         question = question.replace('\\n', '\n')
 
@@ -422,8 +430,21 @@ class Bot(object):
             return
 
         try:
+            voting_end_date_ts = int(datetime.fromisoformat(end_vote_date).timestamp())
+        except:
+            voting_end_date_ts = None
+
+        if not voting_end_date_ts:
+            self.do_reply(client, event, None, f'Invalid date: {end_vote_date}')
+            return
+
+        if voting_end_date_ts > resolve_date_ts:
+            self.do_reply(client, event, None, f'End vote date ({end_vote_date}) cannot be later than resolve date ({resolve_date})')
+            return
+
+        try:
             bet_id = self.db.bet_create(event['user'], int(datetime.now().timestamp()),
-                                        resolve_date_ts, question, choices)
+                                        resolve_date_ts, voting_end_date_ts, question, choices)
         except Exception as ex:
             self.logger.error(f'bet_create failed: {ex}')
             return
@@ -463,7 +484,7 @@ class Bot(object):
                           bet_not_found_text)
             return
 
-        active, _, resolve_date, _, question = info
+        active, _, _, _, _, question = info
 
         if not active:
             self.do_reply(client, event,

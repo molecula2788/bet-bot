@@ -13,7 +13,7 @@ usage_bet_create_blocks = [
 	'type': 'section',
 	'text': {
 	    'type': 'mrkdwn',
-	    'text': '> bet-create resolve_date question choice1 choice2 ...'
+	    'text': '> bet-create resolve_date vote_end_date question choice1 choice2 ...'
 	}
     },
     {
@@ -27,7 +27,7 @@ usage_bet_create_blocks = [
 	'type': 'section',
 	'text': {
 	    'type': 'mrkdwn',
-	    'text': '> bet-create 2021-10-23 \"Cât o să fie euro?\" \"4.9 - 4.95\" \"4.95 - 4.96\" \"4.96 - 4.97\"'
+	    'text': '> bet-create 2021-10-23 2021-05-01 \"Cât o să fie euro?\" \"4.9 - 4.95\" \"4.95 - 4.96\" \"4.96 - 4.97\"'
 	}
     }
 ]
@@ -122,7 +122,7 @@ def invalid_choice_text(choice):
     return f'Invalid choice: {choice}'
 
 def bet_info_blocks(bet_id, question, choices, correct_choice_id,
-                    resolve_date, votes, user_info):
+                    resolve_date_ts, voting_end_date_ts, votes, user_info):
     question_text = ''
     question = question.split('\n')
 
@@ -191,7 +191,8 @@ def bet_info_blocks(bet_id, question, choices, correct_choice_id,
                 choice.append(ctx)
         b.extend(choice)
 
-    d = datetime.fromtimestamp(resolve_date)
+    resolve_date = datetime.fromtimestamp(resolve_date_ts)
+    voting_end_date = datetime.fromtimestamp(voting_end_date_ts)
 
     b.extend([
         {
@@ -201,7 +202,14 @@ def bet_info_blocks(bet_id, question, choices, correct_choice_id,
             'type': 'section',
             'text': {
 	        'type': 'mrkdwn',
-	        'text': 'Resolves on {}'.format(d.strftime('%Y-%m-%d %H:%M:%S'))
+	        'text': 'Resolves on {}'.format(resolve_date.strftime('%Y-%m-%d %H:%M:%S'))
+            }
+        },
+        {
+            'type': 'section',
+            'text': {
+	        'type': 'mrkdwn',
+	        'text': 'Voting ends on {}'.format(voting_end_date.strftime('%Y-%m-%d %H:%M:%S'))
             }
         },
         {
@@ -303,6 +311,8 @@ def bets_blocks(text, truncated):
     ]
 
 bet_not_active_text = 'Bet not active'
+
+bet_vote_has_ended = 'Voting has ended for this bet'
 
 usage_bet_resolve_blocks = [
     {

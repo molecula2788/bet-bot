@@ -60,13 +60,13 @@ class DB(object):
         return result[0][0]
 
 
-    def bet_create(self, user_id, ts, resolve_date_ts, question, choices):
+    def bet_create(self, user_id, ts, resolve_date_ts, voting_end_date_ts, question, choices):
         self.ensure_connected()
         cursor = self.conn.cursor(prepared=True)
 
-        cursor.execute(('INSERT INTO bets (user, ts, resolve_date, active) '
-                        'VALUES (%s, %s, %s, 1)'),
-                       (user_id, ts, resolve_date_ts))
+        cursor.execute(('INSERT INTO bets (user, ts, resolve_date, voting_end_date, active) '
+                        'VALUES (%s, %s, %s, %s, 1)'),
+                       (user_id, ts, resolve_date_ts, voting_end_date_ts))
 
         bet_id = cursor.lastrowid
 
@@ -90,7 +90,7 @@ class DB(object):
         cursor = self.conn.cursor(prepared=True)
 
         cursor.execute(
-            ('SELECT b.active, b.user, b.resolve_date, b.correct_choice_id, q.question FROM bets b '
+            ('SELECT b.active, b.user, b.resolve_date, b.voting_end_date, b.correct_choice_id, q.question FROM bets b '
              'INNER JOIN bet_questions q ON b.id = q.bet_id '
              'WHERE b.id = %s '),
             (bet_id,))
@@ -144,7 +144,7 @@ class DB(object):
         return votes
 
 
-    def bet_do_vote(self, bet_id, user_id, choice_id):
+    def bet_do_vote(self, bet_id, user_id, ts, choice_id):
         self.ensure_connected()
         cursor = self.conn.cursor(prepared=True)
 
