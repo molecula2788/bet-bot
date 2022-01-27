@@ -208,7 +208,7 @@ class Bot(object):
     def bets_all(self, client: RTMClient, event: dict, args: List[str]):
         ALIGN_ID = 10
         ALIGN_DATE = 25
-        ALIGN_QUESTION = 50
+        ALIGN_QUESTION = 75
         ALIGN_ANSWER = 50
 
         results = self.db.get_bets()
@@ -256,7 +256,7 @@ class Bot(object):
             'Voting ended on'.ljust(ALIGN_DATE),
             'Question'.ljust(ALIGN_QUESTION),
             'Correct choice')
-        text += '-' * 135 + '\n'
+        text += '-' * 160 + '\n'
 
         for bet_id, resolve_date_ts, voting_end_date_ts, question, active, correct_choice in results:
             if not active:
@@ -282,7 +282,7 @@ class Bot(object):
     def my_bets(self, client: RTMClient, event: dict, args: List[str]):
         ALIGN_ID = 10
         ALIGN_DATE = 25
-        ALIGN_QUESTION = 50
+        ALIGN_QUESTION = 75
         ALIGN_ANSWER = 50
         ALIGN_CORRECT_ANSWER = 50
 
@@ -295,7 +295,7 @@ class Bot(object):
             'Voting ends on'.ljust(ALIGN_DATE),
             'Question'.ljust(ALIGN_QUESTION),
             'Your choice')
-        text += '-' * 155 + '\n'
+        text += '-' * 180 + '\n'
 
         now = int(time.time())
 
@@ -317,7 +317,7 @@ class Bot(object):
             'Voting ended on'.ljust(ALIGN_DATE),
             'Question'.ljust(ALIGN_QUESTION),
             'Your choice')
-        text += '-' * 155 + '\n'
+        text += '-' * 180 + '\n'
 
         for bet_id, resolve_date_ts, voting_end_date_ts, active, question, correct_choice, choice in results:
             if active and now > voting_end_date_ts:
@@ -338,7 +338,7 @@ class Bot(object):
             'Question'.ljust(ALIGN_QUESTION),
             'Your choice'.ljust(ALIGN_ANSWER),
             'Correct choice')
-        text += '-' * 185 + '\n'
+        text += '-' * 210 + '\n'
 
         for bet_id, resolve_date_ts, voting_end_date_ts, active, question, correct_choice, choice in results:
             if not active:
