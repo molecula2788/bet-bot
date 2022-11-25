@@ -409,12 +409,12 @@ class Bot(object):
     bet_vote bet_id choice
     '''
     def bet_vote(self, client: RTMClient, event: dict, args: List[str]):
-        if len(args) != 2:
+        if len(args) == 1 and args[0] == 'help':
             self.do_reply(client, event,
                           usage_bet_vote_blocks, usage_bet_vote_text)
             return
 
-        if len(args) == 1 and args[0] == 'help':
+        if len(args) < 2:
             self.do_reply(client, event,
                           usage_bet_vote_blocks, usage_bet_vote_text)
             return

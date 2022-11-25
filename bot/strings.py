@@ -27,7 +27,7 @@ usage_bet_create_blocks = [
 	'type': 'section',
 	'text': {
 	    'type': 'mrkdwn',
-	    'text': '> bet-create 2021-10-23 2021-05-01 \"Cât o să fie euro?\" \"4.9 - 4.95\" \"4.95 - 4.96\" \"4.96 - 4.97\"'
+	    'text': '> bet-create "2021-10-23 23:59:59" "2021-05-01 23:59:59" \"Cât o să fie euro?\" \"4.9 - 4.95\" \"4.95 - 4.96\" \"4.96 - 4.97\"'
 	}
     }
 ]
@@ -216,7 +216,7 @@ def bet_info_blocks(bet_id, question, choices, correct_choice_id,
             'type': 'section',
             'text': {
 	        'type': 'mrkdwn',
-	        'text': f'Use `@{config.my_name} vote id option_number` to vote. Example: `@{config.my_name} vote {bet_id} 3`'
+	        'text': f'Use `@{config.my_name} vote id option_number` to vote. Example: `@{config.my_name} vote {bet_id} 2`'
             }
         }
     ])
