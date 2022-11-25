@@ -1,5 +1,6 @@
 import os
 import logging
+import time
 
 from datetime import datetime, timedelta
 
@@ -9,13 +10,19 @@ from apscheduler.executors.pool import ThreadPoolExecutor
 
 from slack_sdk import WebClient
 from db import DB
+from strings import *
 
 SEC = 1
 MIN = 60
 HR = 3600
 
+def ts_to_str(ts):
+    return datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+
+
 class TaskManager(object):
-    def __init__(self):
+    def __init__(self, bot):
+        self.bot = bot
         self.logger = logging.getLogger('tasks')
 
         self.scheduler = BackgroundScheduler(
@@ -37,6 +44,15 @@ class TaskManager(object):
                 'func': self.update_users_info,
                 'type': 'interval',
                 'interval': 24 * HR
+            },
+            'bets_reminder': {
+                'func': self.bets_reminder,
+                'type': 'cron',
+                'cron_args': {
+                    'day_of_week': 'sun',
+                    'hour': 20,
+                    'minute': 0
+                }
             }
         }
 
@@ -52,6 +68,12 @@ class TaskManager(object):
                                        seconds = interval,
                                        id = task_name,
                                        next_run_time = datetime.now())
+            elif task_type == 'cron':
+                cron_args = task_spec['cron_args']
+
+                self.scheduler.add_job(task_func, 'cron',
+                                       **cron_args)
+
 
     def update_users_info(self):
         self.logger.info(f'Updating users info')
@@ -84,3 +106,45 @@ class TaskManager(object):
             db.update_user_info(user_id, name, avatar_url)
 
         db.close()
+
+
+    def bets_reminder(self):
+        db = DB()
+
+        results = db.get_bets()
+        ALIGN_ID = 5
+        ALIGN_DATE = 22
+        MAX_TEXT = 2900
+
+        truncated = False
+
+        text = '{} {} {}\n'.format(
+            'Id'.ljust(ALIGN_ID),
+            'Voting ends on'.ljust(ALIGN_DATE+7),
+            'Question')
+        text += '-' * 50 + '\n'
+
+        now = int(time.time())
+
+        for bet_id, resolve_date_ts, voting_end_date_ts, question, active, _ in results:
+            if not active:
+                continue
+
+            if now > voting_end_date_ts:
+                continue
+
+            line = '{} {} {}\n'.format(
+                str(bet_id).ljust(ALIGN_ID),
+                ts_to_str(voting_end_date_ts).ljust(ALIGN_DATE),
+                question.split('\n')[0])
+
+            if len(text) + len(line) > MAX_TEXT:
+                truncated = True
+                break
+
+            text += line
+
+        self.bot.do_reply_on_channel(self.bot.rtm, None, self.bot.my_channel,
+                                     bets_reminder_blocks(text, truncated),
+                                     'Bets reminder')
+

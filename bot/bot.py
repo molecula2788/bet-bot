@@ -4,6 +4,7 @@ import time
 import re
 import shlex
 import config
+import threading
 from datetime import datetime
 from typing import List
 
@@ -34,9 +35,11 @@ class Bot(object):
         self.admin_user_id = self.db.config_get_admin_user_id()
         self.my_user_id = self.rtm.web_client.auth_test()['user_id']
 
-        self.task_mgr = TaskManager()
+        self.task_mgr = TaskManager(self)
 
         self.logger = logging.getLogger('bot')
+
+        self.reply_lock = threading.Lock()
 
 
     def _rtm_on(self, ev_type: str):
@@ -111,47 +114,50 @@ class Bot(object):
         if not channel or not user_id:
             return
 
-        try:
-            client.web_client.chat_postMessage(
-                channel = channel,
-                user = user_id,
-                thread_ts = thread_ts,
-                blocks = message_blocks,
-                text = message_text
-            )
-        except Exception as ex:
-            self.logger.error(f'chat_postMessage failed: {ex}')
+        with self.reply_lock:
+            try:
+                client.web_client.chat_postMessage(
+                    channel = channel,
+                    user = user_id,
+                    thread_ts = thread_ts,
+                    blocks = message_blocks,
+                    text = message_text
+                )
+            except Exception as ex:
+                self.logger.error(f'chat_postMessage failed: {ex}')
 
 
     def do_reply_on_channel(self, client: RTMClient, event: dict,
                             channel: str, message_blocks: dict, message_text: str):
-        try:
-            client.web_client.chat_postMessage(
-                channel = channel,
-                blocks = message_blocks,
-                text = message_text
-            )
-        except Exception as ex:
-            self.logger.error(f'chat_postMessage failed: {ex}')
+        with self.reply_lock:
+            try:
+                client.web_client.chat_postMessage(
+                    channel = channel,
+                    blocks = message_blocks,
+                    text = message_text
+                )
+            except Exception as ex:
+                self.logger.error(f'chat_postMessage failed: {ex}')
 
 
     def do_reply_big_msg(self, client: RTMClient, event: dict,
                          title: str, comment: str, text: str):
-        try:
-            res = client.web_client.conversations_open(users = event['user'])
-        except Exception as ex:
-            self.logger.error(f'conversations_open failed: {ex}')
+        with self.reply_lock:
+            try:
+                res = client.web_client.conversations_open(users = event['user'])
+            except Exception as ex:
+                self.logger.error(f'conversations_open failed: {ex}')
 
-        channel = res['channel']['id']
+            channel = res['channel']['id']
 
-        try:
-            client.web_client.files_upload(
-                channels = channel,
-                content = text,
-                title = title,
-                initial_comment = comment)
-        except Exception as ex:
-            self.logger.error(f'files_upload failed: {ex}')
+            try:
+                client.web_client.files_upload(
+                    channels = channel,
+                    content = text,
+                    title = title,
+                    initial_comment = comment)
+            except Exception as ex:
+                self.logger.error(f'files_upload failed: {ex}')
 
 
     '''

@@ -515,3 +515,47 @@ help_blocks = [
 	}
     }
 ]
+
+
+def bets_reminder_blocks(text, truncated):
+    b = [
+        {
+            'type': 'section',
+            'text': {
+                'type': 'mrkdwn',
+                'text': '*Ongoing bets reminder*'
+            }
+        },
+        {
+            'type': 'section',
+            'text': {
+                'type': 'mrkdwn',
+                'text': '@channel Here are the ongoing bets. Think you can do better than a coin toss? Get your votes in!'
+            }
+        },
+        {
+            'type': 'section',
+            'text': {
+                'type': 'plain_text',
+		'text': text
+            }
+        }
+    ]
+
+    if truncated:
+        b.append({
+            'type': 'section',
+            'text': {
+                'type': 'mrkdwn',
+                'text': f'Output has been truncated. Use `@{config.my_name} bets-all` to see all bets'
+            }
+        })
+    b.append({
+            'type': 'section',
+            'text': {
+                'type': 'mrkdwn',
+                'text': f'Use `@{config.my_name} bet-info id` for more details'
+            }
+        }
+    )
+    return b
