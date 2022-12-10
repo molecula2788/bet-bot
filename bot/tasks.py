@@ -126,6 +126,8 @@ class TaskManager(object):
 
         now = int(time.time())
 
+        send_reminder = False
+
         for bet_id, resolve_date_ts, voting_end_date_ts, question, active, _ in results:
             if not active:
                 continue
@@ -144,7 +146,10 @@ class TaskManager(object):
 
             text += line
 
-        self.bot.do_reply_on_channel(self.bot.rtm, None, self.bot.my_channel,
-                                     bets_reminder_blocks(text, truncated),
-                                     'Bets reminder')
+            send_reminder = True
+
+        if send_reminder:
+            self.bot.do_reply_on_channel(self.bot.rtm, None, self.bot.my_channel,
+                                         bets_reminder_blocks(text, truncated),
+                                         'Bets reminder')
 
