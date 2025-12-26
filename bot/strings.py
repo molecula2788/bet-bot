@@ -390,7 +390,9 @@ def bet_resolved_blocks(bet_id, question, correct_choice, winners):
 
         delta = bet_end_date - vote_date
 
-        s = f'<@{user_id}>: {delta.days} days {delta.seconds} seconds before\n'
+        minutes, seconds = divmod(delta.seconds, 60)
+
+        s = f'<@{user_id}>: {delta.days} days, {minutes} minutes, {seconds} seconds before\n'
 
         winners_str += s
 
