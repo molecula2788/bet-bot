@@ -151,13 +151,13 @@ class Bot(object):
             channel = res['channel']['id']
 
             try:
-                client.web_client.files_upload(
-                    channels = channel,
+                client.web_client.files_upload_v2(
+                    channel = channel,
                     content = text,
                     title = title,
                     initial_comment = comment)
             except Exception as ex:
-                self.logger.error(f'files_upload failed: {ex}')
+                self.logger.error(f'files_upload_v2 failed: {ex}')
 
 
     '''
